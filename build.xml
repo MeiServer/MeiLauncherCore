@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="MeiLauncherCore" default="default">
+	<property name="version" value="0.0.1" />
+	<property name="workdir" location="." />
+	<property name="bindir" location="${workdir}/bin" />
+	<property name="srcdir" location="${workdir}/src" />
+	<property name="libdir" location="${workdir}/lib" />
+	<property name="releasedir" location="${workdir}/releases" />
+	<property name="destjar" location="${releasedir}/LauncherCore_v${version}.jar" />
+
+	<pathconvert property="lib.classpath">
+		<path>
+			<fileset id="lib.classpath.set" dir="${libdir}">
+        <include name="${libdir}/MeiServerLib.jar" />
+			</fileset>
+		</path>
+	</pathconvert>
+
+	<target name="default" depends="clean, depends, build, jar, test">
+	</target>
+
+  <target name="depends">
+  </target>
+
+	<target name="build">
+		<javac destdir="${bindir}" includeantruntime="false">
+			<src path="${srcdir}" />
+			<classpath>
+				<fileset refid="lib.classpath.set" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="jar">
+		<jar jarfile="${destjar}">
+			<fileset dir="${bindir}" includes="**/*.class" />
+			<zipgroupfileset refid="lib.classpath.set" />
+		</jar>
+	</target>
+
+	<target name="clean">
+		<delete>
+			<fileset dir="bin/">
+				<include name="*.class" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="test">
+		<junit>
+			<classpath>
+				<pathelement location="${destjar}" />
+			</classpath>
+		</junit>
+	</target>
+</project>
