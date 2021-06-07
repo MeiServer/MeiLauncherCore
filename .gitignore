@@ -1,4 +1,6 @@
 releases/*
 bin/*
+build/*
 !releases/.gitkeep
 !bin/.gitkeep
+!build/.gitkeep

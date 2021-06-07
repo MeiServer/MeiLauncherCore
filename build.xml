@@ -2,16 +2,19 @@
 <project name="MeiLauncherCore" default="default">
 	<property name="version" value="0.0.1" />
 	<property name="workdir" location="." />
-	<property name="bindir" location="${workdir}/bin" />
+	<property name="bindir" location="${workdir}/build" />
 	<property name="srcdir" location="${workdir}/src" />
 	<property name="libdir" location="${workdir}/lib" />
 	<property name="releasedir" location="${workdir}/releases" />
+	<property name="meiserverlibdir" location="${workdir}/MeiServerLib" />
+	<property name="destminjar" location="${releasedir}/LauncherCore_v${version}.min.jar" />
 	<property name="destjar" location="${releasedir}/LauncherCore_v${version}.jar" />
 
 	<pathconvert property="lib.classpath">
 		<path>
 			<fileset id="lib.classpath.set" dir="${libdir}">
-        <include name="${libdir}/MeiServerLib.jar" />
+				<include name="MeiServerLib.jar" />
+				<include name="commons-codec-1.15.jar" />
 			</fileset>
 		</path>
 	</pathconvert>
@@ -19,8 +22,10 @@
 	<target name="default" depends="clean, depends, build, jar, test">
 	</target>
 
-  <target name="depends">
-  </target>
+	<target name="depends">
+		<ant antfile="${meiserverlibdir}/build.xml" dir="${meiserverlibdir}" inheritall="no" />
+		<copy tofile="${libdir}/MeiServerLib.jar" file="${meiserverlibdir}/releases/MeiServerLib_v0.0.1.jar" />
+	</target>
 
 	<target name="build">
 		<javac destdir="${bindir}" includeantruntime="false">
@@ -36,21 +41,25 @@
 			<fileset dir="${bindir}" includes="**/*.class" />
 			<zipgroupfileset refid="lib.classpath.set" />
 		</jar>
+
+		<jar jarfile="${destminjar}">
+			<fileset dir="${bindir}" includes="**/*.class" />
+		</jar>
 	</target>
 
 	<target name="clean">
 		<delete>
-			<fileset dir="bin/">
+			<fileset dir="${bindir}">
 				<include name="*.class" />
 			</fileset>
 		</delete>
 	</target>
 
 	<target name="test">
-		<junit>
+		<!--<junit>
 			<classpath>
 				<pathelement location="${destjar}" />
 			</classpath>
-		</junit>
+		</junit>-->
 	</target>
 </project>

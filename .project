@@ -14,4 +14,11 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>MeiServerLib_src</name>
+			<type>2</type>
+			<locationURI>$%7BWORKSPACE_LOC%7D/MeiServerLib/src</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>
