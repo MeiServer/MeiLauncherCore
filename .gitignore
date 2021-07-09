@@ -4,3 +4,6 @@ build/*
 !releases/.gitkeep
 !bin/.gitkeep
 !build/.gitkeep
+.project
+.classpath
+.settings/*

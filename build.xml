@@ -7,14 +7,13 @@
 	<property name="libdir" location="${workdir}/lib" />
 	<property name="releasedir" location="${workdir}/releases" />
 	<property name="meiserverlibdir" location="${workdir}/MeiServerLib" />
-	<property name="destminjar" location="${releasedir}/LauncherCore_v${version}.min.jar" />
-	<property name="destjar" location="${releasedir}/LauncherCore_v${version}.jar" />
+	<property name="destminjar" location="${releasedir}/MeiLauncherCore_v${version}.min.jar" />
+	<property name="destjar" location="${releasedir}/MeiLauncherCore_v${version}.jar" />
 
 	<pathconvert property="lib.classpath">
 		<path>
 			<fileset id="lib.classpath.set" dir="${libdir}">
 				<include name="MeiServerLib.jar" />
-				<include name="commons-codec-1.15.jar" />
 			</fileset>
 		</path>
 	</pathconvert>
