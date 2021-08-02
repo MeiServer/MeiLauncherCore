@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import r3qu13m.mei.lib.FileUtils;
 import r3qu13m.mei.lib.MPVec;
 import r3qu13m.mei.lib.MeiServerLib;
 import r3qu13m.mei.lib.OperationType;
@@ -67,15 +68,7 @@ public class ModExtractor {
 		}
 
 		try {
-			InputStream is = distribute.getURL().openStream();
-			OutputStream os = new FileOutputStream(dest);
-			byte[] buf = new byte[256];
-			while (is.available() != 0) {
-				int readedCount = is.read(buf);
-				os.write(buf, 0, readedCount);
-			}
-			is.close();
-			os.close();
+			FileUtils.downloadFile(distribute.getURL(), dest);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

@@ -1,7 +1,7 @@
 releases/*
 bin/*
 build/*
-lib/*
+lib/MeiServerLib.jar
 !releases/.gitkeep
 !bin/.gitkeep
 !build/.gitkeep

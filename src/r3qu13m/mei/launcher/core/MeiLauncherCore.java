@@ -1,20 +1,20 @@
 package r3qu13m.mei.launcher.core;
 
+import java.io.File;
+import java.nio.file.Path;
+
+import javax.swing.filechooser.FileSystemView;
+
 public class MeiLauncherCore {
-	private static MeiLauncherCore _instance;
-
-	public static MeiLauncherCore instance() {
-		if (MeiLauncherCore._instance == null) {
-			MeiLauncherCore._instance = new MeiLauncherCore();
-		}
-		return MeiLauncherCore._instance;
+	public static File getDefaultDirectory() {
+		return FileSystemView.getFileSystemView().getDefaultDirectory();
 	}
 
-	private MeiLauncherCore() {
-
+	public static File getBaseDirectory() {
+		return new File(getDefaultDirectory(), "MeiServer");
 	}
 
-	public void initialize() {
-		
+	public static File getConfigurationFile() {
+		return new File(getBaseDirectory(), "config.yml");
 	}
 }
