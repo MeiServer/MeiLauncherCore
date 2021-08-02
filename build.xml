@@ -22,8 +22,10 @@
 	</target>
 
 	<target name="depends">
-		<ant antfile="${meiserverlibdir}/build.xml" dir="${meiserverlibdir}" inheritall="no" />
-		<copy tofile="${libdir}/MeiServerLib.jar" file="${meiserverlibdir}/releases/MeiServerLib_v0.0.1.jar" />
+		<ant antfile="${meiserverlibdir}/build.xml" dir="${meiserverlibdir}" inheritall="no">
+			<property name="version" value="X" />
+		</ant>
+		<copy tofile="${libdir}/MeiServerLib.jar" file="${meiserverlibdir}/releases/MeiServerLib_vX.jar" />
 	</target>
 
 	<target name="build">

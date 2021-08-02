@@ -1,9 +1,11 @@
 releases/*
 bin/*
 build/*
+lib/*
 !releases/.gitkeep
 !bin/.gitkeep
 !build/.gitkeep
+!lib/.gitkeep
 .project
 .classpath
 .settings/*
