@@ -2,10 +2,7 @@ package r3qu13m.mei.launcher.core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,7 +32,7 @@ public class ModExtractor {
 	}
 
 	private static File getTempDir(final File baseDir) {
-		File ret = new File(baseDir, "temp");
+		final File ret = new File(baseDir, "temp");
 		if (ret.exists()) {
 			if (ret.isFile() || !ret.mkdir()) {
 				throw new RuntimeException("Can't create temporary directory");
@@ -53,13 +50,13 @@ public class ModExtractor {
 	private static String computeHash(final File target) {
 		try {
 			return DigestUtils.sha1Hex(new FileInputStream(target));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	private static File downloadFile(final File baseDir, final DistributeFile distribute) {
-		File dest = new File(ModExtractor.getTempDir(baseDir), distribute.getName());
+		final File dest = new File(ModExtractor.getTempDir(baseDir), distribute.getName());
 		if (dest.exists()) {
 			if (ModExtractor.computeHash(dest).equals(distribute.getHash())) {
 				return dest;
@@ -69,7 +66,7 @@ public class ModExtractor {
 
 		try {
 			FileUtils.downloadFile(distribute.getURL(), dest);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 
@@ -91,15 +88,15 @@ public class ModExtractor {
 			diff = new MPVec(pack).getDifference();
 		}
 
-		for (UUID key : diff.keySet()) {
+		for (final UUID key : diff.keySet()) {
 			if (diff.get(key) == OperationType.DELETE) {
 				ModExtractor.deleteFile(new File(ModExtractor.getTempDir(baseDir),
 						MeiServerLib.instance().getDistributeFile(key).getName()));
 			}
 		}
 
-		for (Mod mod : pack.getMods()) {
-			for (DistributeFile distribute : mod.getFiles()) {
+		for (final Mod mod : pack.getMods()) {
+			for (final DistributeFile distribute : mod.getFiles()) {
 				final UUID id = distribute.getID();
 				if (diff.containsKey(id) && diff.get(id) == OperationType.ADD) {
 					ModExtractor.downloadFile(baseDir, distribute);
