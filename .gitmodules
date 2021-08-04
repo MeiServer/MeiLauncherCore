@@ -1,3 +1,3 @@
 [submodule "MeiServerLib"]
 	path = MeiServerLib
-	url = git@r3qu13m.github.com:MeiServer/MeiServerLib.git
+	url = git@github.com:MeiServer/MeiServerLib.git
