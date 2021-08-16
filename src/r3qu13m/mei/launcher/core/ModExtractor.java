@@ -9,13 +9,15 @@ import java.util.UUID;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import r3qu13m.mei.lib.DataType;
 import r3qu13m.mei.lib.FileUtils;
 import r3qu13m.mei.lib.MPVec;
+import r3qu13m.mei.lib.MeiLogger;
 import r3qu13m.mei.lib.MeiServerLib;
 import r3qu13m.mei.lib.OperationType;
 import r3qu13m.mei.lib.structure.DistributeFile;
-import r3qu13m.mei.lib.structure.Mod;
 import r3qu13m.mei.lib.structure.ModPack;
+import r3qu13m.mei.lib.structure.ModPackSequence;
 
 public class ModExtractor {
 	private static ModExtractor _instance = null;
@@ -31,17 +33,8 @@ public class ModExtractor {
 
 	}
 
-	private static File getTempDir(final File baseDir) {
-		final File ret = new File(baseDir, "temp");
-		if (ret.exists()) {
-			if (ret.isFile() || !ret.mkdir()) {
-				throw new RuntimeException("Can't create temporary directory");
-			}
-		}
-		return ret;
-	}
-
 	private static void deleteFile(final File target) {
+		System.err.println(target);
 		if (target.exists()) {
 			target.renameTo(new File(target.getAbsolutePath() + ".bak"));
 		}
@@ -56,13 +49,19 @@ public class ModExtractor {
 	}
 
 	private static File downloadFile(final File baseDir, final DistributeFile distribute) {
-		final File dest = new File(ModExtractor.getTempDir(baseDir), distribute.getName());
+		final File dest = new File(baseDir, String.join(File.separator, distribute.getName().split("[/\\\\]")));
 		if (dest.exists()) {
 			if (ModExtractor.computeHash(dest).equals(distribute.getHash())) {
 				return dest;
 			}
 			ModExtractor.deleteFile(dest);
+		} else {
+			if (!dest.getParentFile().exists()) {
+				dest.getParentFile().mkdirs();
+			}
 		}
+
+		MeiLogger.getLogger().info(String.format("Downloading %s...", distribute.getName()));
 
 		try {
 			FileUtils.downloadFile(distribute.getURL(), dest);
@@ -76,31 +75,44 @@ public class ModExtractor {
 			return dest;
 		}
 
+		if (dest.exists()) {
+			dest.delete();
+		}
+
 		throw new RuntimeException(String.format("Failed to download: %s (actual sha1: %s, expected %s)",
 				distribute.getName(), sha1, distribute.getHash()));
 	}
 
-	public static void extract(final File baseDir, final ModPack pack, final Optional<ModPack> currentPack) {
+	public static void extract(final File baseDir, final ModPackSequence seq, final ModPack latestPack,
+			final Optional<ModPack> currentPack) {
 		Map<UUID, OperationType> diff;
 		if (currentPack.isPresent()) {
-			diff = new MPVec(pack, currentPack.get()).getDifference();
+			diff = seq.getDifference(currentPack.get(), latestPack).getDifference();
 		} else {
-			diff = new MPVec(pack).getDifference();
+			diff = new MPVec(latestPack).getDifference();
 		}
 
 		for (final UUID key : diff.keySet()) {
 			if (diff.get(key) == OperationType.DELETE) {
-				ModExtractor.deleteFile(new File(ModExtractor.getTempDir(baseDir),
-						MeiServerLib.instance().getDistributeFile(key).getName()));
+				DistributeFile df = MeiServerLib.instance().getDistributeFile(key);
+				if (df.getType() == DataType.CONFIG || df.getType() == DataType.JAR) {
+					continue;
+				}
+
+				df.getType().getDestDir(baseDir).ifPresent(dir -> {
+					ModExtractor.deleteFile(new File(dir, String.join(File.separator, df.getName().split("[/\\\\]"))));
+				});
 			}
 		}
 
-		for (final Mod mod : pack.getMods()) {
-			for (final DistributeFile distribute : mod.getFiles()) {
-				final UUID id = distribute.getID();
-				if (diff.containsKey(id) && diff.get(id) == OperationType.ADD) {
-					ModExtractor.downloadFile(baseDir, distribute);
+		for (final DistributeFile distribute : latestPack.getFiles()) {
+			final UUID id = distribute.getID();
+			if (diff.containsKey(id) && diff.get(id) == OperationType.ADD) {
+				File dir = baseDir;
+				if (distribute.getType() != DataType.JAR) {
+					dir = distribute.getType().getDestDir(dir).get();
 				}
+				ModExtractor.downloadFile(dir, distribute);
 			}
 		}
 	}
