@@ -1,12 +1,10 @@
 package r3qu13m.mei.launcher.core;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -21,8 +19,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.digest.DigestUtils;
-
-import com.sun.org.apache.xpath.internal.operations.Mod;
 
 import r3qu13m.mei.lib.DataType;
 import r3qu13m.mei.lib.FileUtils;
@@ -49,7 +45,6 @@ public class ModExtractor {
 	}
 
 	private static void deleteFile(final File target) {
-		System.err.println(target);
 		if (target.exists()) {
 			target.renameTo(new File(target.getAbsolutePath() + ".bak"));
 		}
@@ -98,7 +93,10 @@ public class ModExtractor {
 				distribute.getName(), sha1, distribute.getHash()));
 	}
 
-	public static void extract(final File baseDir, final ModPackSequence seq, final Optional<ModPack> currentPack) {
+	public static void extract(final File baseDir, final ModPackSequence seq, final Optional<ModPack> currentPack)
+			throws IOException {
+		boolean doUpdateJar = false;
+
 		Map<UUID, OperationType> diff;
 		ModPack latestPack = seq.getLatestPack().get();
 		ModPack firstPack = seq.getFirstPack().get();
@@ -110,8 +108,6 @@ public class ModExtractor {
 			diff = new MPVec(latestPack).getDifference();
 		}
 
-		boolean doUpdateJar = false;
-
 		for (final UUID id : diff.keySet()) {
 			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 
@@ -120,6 +116,8 @@ public class ModExtractor {
 			}
 
 			if (diff.get(id) == OperationType.DELETE) {
+				System.err.println(df.getName());
+				System.err.println(df.getType());
 				df.getType().getDestDir(baseDir).ifPresent(dir -> {
 					ModExtractor.deleteFile(new File(dir, String.join(File.separator, df.getName().split("[/\\\\]"))));
 				});
@@ -136,6 +134,7 @@ public class ModExtractor {
 			}
 		}
 
+		// Download configuration files
 		Map<String, DistributeFile> configMap = new HashMap<>();
 		for (ModPack pack : seq.getModPackList()) {
 			for (DistributeFile file : pack.getFiles()) {
@@ -147,9 +146,20 @@ public class ModExtractor {
 
 		for (String key : configMap.keySet()) {
 			DistributeFile file = configMap.get(key);
-			ModExtractor.downloadFile(file.getType().getDestDir(baseDir).get(), file);
+			final File dest = new File(file.getType().getDestDir(baseDir).get(),
+					String.join(File.separator, file.getName().split("[/\\\\]")));
+
+			if (!dest.exists()) {
+				if (!dest.getParentFile().exists()) {
+					dest.getParentFile().mkdirs();
+				}
+
+				MeiLogger.getLogger().info(String.format("Downloading %s...", file.getName()));
+				FileUtils.downloadFile(file.getURL(), dest);
+			}
 		}
 
+		// Merge jar-mods into minecraft.jar
 		List<File> jarMods = new ArrayList<>();
 		Set<String> wroteFiles = new HashSet<>();
 
@@ -161,9 +171,13 @@ public class ModExtractor {
 				}
 			}
 		});
-		jarMods.add(new File(new File(baseDir, "bin"), "minecraft_vanilla.jar"));
 
-		try {
+		File binDir = new File(baseDir, "bin");
+		File lockFile = new File(binDir, "minecraft_lock.txt");
+		jarMods.add(new File(binDir, "minecraft_vanilla.jar"));
+		doUpdateJar |= !lockFile.exists();
+
+		if (doUpdateJar) {
 			FileOutputStream fos = new FileOutputStream(new File(new File(baseDir, "bin"), "minecraft.jar"));
 			ZipOutputStream dest = new ZipOutputStream(fos);
 			for (File file : jarMods) {
@@ -197,8 +211,8 @@ public class ModExtractor {
 				zf.close();
 			}
 			dest.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+			lockFile.createNewFile();
 		}
+		MeiLogger.getLogger().info("All done!");
 	}
 }
