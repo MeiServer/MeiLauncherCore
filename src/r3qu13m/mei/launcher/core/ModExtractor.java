@@ -46,6 +46,7 @@ public class ModExtractor {
 
 	private static void deleteFile(final File target) {
 		if (target.exists()) {
+			MeiLogger.getLogger().info(String.format("Delete %s", target.getName()));
 			target.renameTo(new File(target.getAbsolutePath() + ".bak"));
 		}
 	}
@@ -71,7 +72,7 @@ public class ModExtractor {
 			}
 		}
 
-		MeiLogger.getLogger().info(String.format("Downloading %s...", distribute.getName()));
+		MeiLogger.getLogger().info(String.format("Downloading %s...", dest.getAbsoluteFile()));
 
 		try {
 			FileUtils.downloadFile(distribute.getURL(), dest);
@@ -116,8 +117,6 @@ public class ModExtractor {
 			}
 
 			if (diff.get(id) == OperationType.DELETE) {
-				System.err.println(df.getName());
-				System.err.println(df.getType());
 				df.getType().getDestDir(baseDir).ifPresent(dir -> {
 					ModExtractor.deleteFile(new File(dir, String.join(File.separator, df.getName().split("[/\\\\]"))));
 				});
@@ -149,7 +148,7 @@ public class ModExtractor {
 			final File dest = new File(file.getType().getDestDir(baseDir).get(),
 					String.join(File.separator, file.getName().split("[/\\\\]")));
 
-			if (!dest.exists()) {
+			if (!dest.exists() || !(currentPack.isPresent() && currentPack.get().equals(latestPack))) {
 				if (!dest.getParentFile().exists()) {
 					dest.getParentFile().mkdirs();
 				}
@@ -191,7 +190,7 @@ public class ModExtractor {
 						continue;
 					}
 					if (!wroteFiles.contains(entry.getName())) {
-						dest.putNextEntry(entry);
+						dest.putNextEntry(new ZipEntry(entry.getName()));
 
 						final InputStream is = zf.getInputStream(entry);
 						final byte buf[] = new byte[1024];
