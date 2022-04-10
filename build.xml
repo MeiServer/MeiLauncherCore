@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="MeiLauncherCore" default="default">
-	<property name="version" value="0.0.1" />
+	<property name="version" value="0.0.2" />
 	<property name="workdir" location="." />
 	<property name="bindir" location="${workdir}/build" />
 	<property name="srcdir" location="${workdir}/src" />
