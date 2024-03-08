@@ -98,7 +98,7 @@ public class ModExtractor {
 
 	private static Map<UUID, String> extract(Map<UUID, OperationType> diff, OperationType op) {
 		Map<UUID, String> res = new HashMap<>();
-		List<UUID> ids = diff.entrySet().stream().filter(entry -> entry.getValue() == OperationType.DELETE)
+		List<UUID> ids = diff.entrySet().stream().filter(entry -> entry.getValue() == op)
 				.map(entry -> entry.getKey()).collect(Collectors.toList());
 		for (UUID id : ids) {
 			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
@@ -125,15 +125,12 @@ public class ModExtractor {
 
 		Map<UUID, String> diffDeletes = extract(diff, OperationType.DELETE);
 		Map<UUID, String> diffAdds = extract(diff, OperationType.ADD);
+		diffAdds.putAll(extract(diff, OperationType.IDENTITY));;
 
 		for (final UUID id : diffDeletes.keySet()) {
 			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 
 			if (df.getType() == DataType.CONFIG) {
-				continue;
-			}
-
-			if (diffAdds.containsValue(diffDeletes.get(id))) { // same file add / delete
 				continue;
 			}
 
@@ -153,7 +150,7 @@ public class ModExtractor {
 			}
 
 			ModExtractor.downloadFile(dir, df);
-			doUpdateJar |= diff.get(id) == OperationType.ADD;
+			doUpdateJar = true;
 		}
 
 		// Merge jar-mods into minecraft.jar
