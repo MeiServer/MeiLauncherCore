@@ -11,3 +11,4 @@ lib/MeiServerLib.jar
 .settings/*
 .gradle/*
 build/*
+/bin/

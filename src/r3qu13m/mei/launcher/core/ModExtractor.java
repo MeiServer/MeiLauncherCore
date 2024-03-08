@@ -47,7 +47,7 @@ public class ModExtractor {
 	private static void deleteFile(final File target) {
 		if (target.exists()) {
 			MeiLogger.getLogger().info(String.format("Delete %s", target.getName()));
-			target.renameTo(new File(target.getAbsolutePath() + ".bak"));
+			target.delete();
 		}
 	}
 
