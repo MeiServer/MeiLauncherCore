@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -62,8 +64,7 @@ public class ModExtractor {
 	private static File downloadFile(final File baseDir, final DistributeFile distribute) {
 		final File dest = new File(baseDir, String.join(File.separator, distribute.getName().split("[/\\\\]")));
 		if (dest.exists()) {
-			if (ModExtractor.computeHash(dest).equals(distribute.getHash())
-					|| distribute.getType() == DataType.CONFIG) {
+			if (ModExtractor.computeHash(dest).equals(distribute.getHash())) {
 				return dest;
 			}
 			ModExtractor.deleteFile(dest);
@@ -95,6 +96,17 @@ public class ModExtractor {
 				distribute.getName(), sha1, distribute.getHash()));
 	}
 
+	private static Map<UUID, String> extract(Map<UUID, OperationType> diff, OperationType op) {
+		Map<UUID, String> res = new HashMap<>();
+		List<UUID> ids = diff.entrySet().stream().filter(entry -> entry.getValue() == OperationType.DELETE)
+				.map(entry -> entry.getKey()).collect(Collectors.toList());
+		for (UUID id : ids) {
+			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
+			res.put(id, df.getHash());
+		}
+		return res;
+	}
+
 	public static void extract(final File baseDir, final ModPackSequence seq, final Optional<ModPack> currentPack)
 			throws IOException {
 		boolean doUpdateJar = false;
@@ -102,6 +114,7 @@ public class ModExtractor {
 		Map<UUID, OperationType> diff;
 		ModPack latestPack = seq.getLatestPack().get();
 		ModPack firstPack = seq.getFirstPack().get();
+
 		if (currentPack.isPresent()) {
 			diff = seq.getDifference(currentPack.get(), latestPack).getDifference();
 		} else if (!firstPack.equals(latestPack)) {
@@ -110,30 +123,37 @@ public class ModExtractor {
 			diff = new MPVec(latestPack).getDifference();
 		}
 
-		for (final UUID id : diff.keySet()) {
+		Map<UUID, String> diffDeletes = extract(diff, OperationType.DELETE);
+		Map<UUID, String> diffAdds = extract(diff, OperationType.ADD);
+
+		for (final UUID id : diffDeletes.keySet()) {
 			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 
-			if (diff.get(id) == OperationType.DELETE) {
-				df.getType().getDestDir(baseDir).ifPresent(dir -> {
-					ModExtractor.deleteFile(new File(dir, String.join(File.separator, df.getName().split("[/\\\\]"))));
-				});
-
-				if (df.getType() == DataType.CONFIG) {
-					continue;
-				}
-			} else if (diff.containsKey(id)
-					&& (diff.get(id) == OperationType.ADD || diff.get(id) == OperationType.IDENTITY)) {
-
-				File dir = baseDir;
-				if (df.getType() != DataType.JAR) {
-					dir = df.getType().getDestDir(dir).get();
-				} else {
-					dir = new File(baseDir, "temp");
-				}
-
-				ModExtractor.downloadFile(dir, df);
-				doUpdateJar |= diff.get(id) == OperationType.ADD;
+			if (df.getType() == DataType.CONFIG) {
+				continue;
 			}
+
+			if (diffAdds.containsValue(diffDeletes.get(id))) { // same file add / delete
+				continue;
+			}
+
+			df.getType().getDestDir(baseDir).ifPresent(dir -> {
+				ModExtractor.deleteFile(new File(dir, String.join(File.separator, df.getName().split("[/\\\\]"))));
+			});
+		}
+
+		for (final UUID id : diffAdds.keySet()) {
+			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
+
+			File dir = baseDir;
+			if (df.getType() != DataType.JAR) {
+				dir = df.getType().getDestDir(dir).get();
+			} else {
+				dir = new File(baseDir, "temp");
+			}
+
+			ModExtractor.downloadFile(dir, df);
+			doUpdateJar |= diff.get(id) == OperationType.ADD;
 		}
 
 		// Merge jar-mods into minecraft.jar
