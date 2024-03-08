@@ -62,7 +62,8 @@ public class ModExtractor {
 	private static File downloadFile(final File baseDir, final DistributeFile distribute) {
 		final File dest = new File(baseDir, String.join(File.separator, distribute.getName().split("[/\\\\]")));
 		if (dest.exists()) {
-			if (ModExtractor.computeHash(dest).equals(distribute.getHash())) {
+			if (ModExtractor.computeHash(dest).equals(distribute.getHash())
+					|| distribute.getType() == DataType.CONFIG) {
 				return dest;
 			}
 			ModExtractor.deleteFile(dest);
@@ -112,49 +113,26 @@ public class ModExtractor {
 		for (final UUID id : diff.keySet()) {
 			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 
-			if (df.getType() == DataType.CONFIG) {
-				continue;
-			}
-
 			if (diff.get(id) == OperationType.DELETE) {
 				df.getType().getDestDir(baseDir).ifPresent(dir -> {
 					ModExtractor.deleteFile(new File(dir, String.join(File.separator, df.getName().split("[/\\\\]"))));
 				});
+
+				if (df.getType() == DataType.CONFIG) {
+					continue;
+				}
 			} else if (diff.containsKey(id)
 					&& (diff.get(id) == OperationType.ADD || diff.get(id) == OperationType.IDENTITY)) {
+
 				File dir = baseDir;
 				if (df.getType() != DataType.JAR) {
 					dir = df.getType().getDestDir(dir).get();
 				} else {
 					dir = new File(baseDir, "temp");
 				}
+
 				ModExtractor.downloadFile(dir, df);
 				doUpdateJar |= diff.get(id) == OperationType.ADD;
-			}
-		}
-
-		// Download configuration files
-		Map<String, DistributeFile> configMap = new HashMap<>();
-		for (ModPack pack : seq.getModPackList()) {
-			for (DistributeFile file : pack.getFiles()) {
-				if (file.getType() == DataType.CONFIG) {
-					configMap.put(file.getName(), file);
-				}
-			}
-		}
-
-		for (String key : configMap.keySet()) {
-			DistributeFile file = configMap.get(key);
-			final File dest = new File(file.getType().getDestDir(baseDir).get(),
-					String.join(File.separator, file.getName().split("[/\\\\]")));
-
-			if (!dest.exists() || !(currentPack.isPresent() && currentPack.get().equals(latestPack))) {
-				if (!dest.getParentFile().exists()) {
-					dest.getParentFile().mkdirs();
-				}
-
-				MeiLogger.getLogger().info(String.format("Downloading %s...", file.getName()));
-				FileUtils.downloadFile(file.getURL(), dest);
 			}
 		}
 
