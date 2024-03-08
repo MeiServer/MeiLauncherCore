@@ -1,0 +1,45 @@
+plugins {
+  id 'java'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
+}
+
+dependencies {
+    implementation project('MeiServerLib')
+    implementation "net.dv8tion:JDA:4.2.1_253"
+    implementation 'com.google.protobuf:protobuf-java:3.25.3'
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.10.1"
+    implementation 'org.yaml:snakeyaml:1.28'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+def version = "0.1.0";
+
+sourceSets.main {
+    java {
+        srcDir files("src/r3qu13m")
+    }
+}
+
+
+jar {
+    archiveFileName = "${project.name}_v${version}.min.jar"
+    destinationDirectory = file("${projectDir}/releases")
+}
+
+shadowJar {
+    archiveFileName = "${project.name}_v${version}.jar"
+    destinationDirectory = jar.destinationDirectory
+    manifest {
+        inheritFrom(project.tasks.jar.manifest)
+    }
+}

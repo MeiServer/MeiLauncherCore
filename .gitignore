@@ -9,3 +9,5 @@ lib/MeiServerLib.jar
 .project
 .classpath
 .settings/*
+.gradle/*
+build/*
