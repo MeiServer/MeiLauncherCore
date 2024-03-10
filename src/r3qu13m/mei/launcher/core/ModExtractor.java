@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,12 +95,12 @@ public class ModExtractor {
 				distribute.getName(), sha1, distribute.getHash()));
 	}
 
-	private static Map<UUID, String> extract(Map<UUID, OperationType> diff, OperationType op) {
-		Map<UUID, String> res = new HashMap<>();
-		List<UUID> ids = diff.entrySet().stream().filter(entry -> entry.getValue() == op)
+	private static Map<UUID, String> extract(final Map<UUID, OperationType> diff, final OperationType op) {
+		final Map<UUID, String> res = new HashMap<>();
+		final List<UUID> ids = diff.entrySet().stream().filter(entry -> entry.getValue() == op)
 				.map(entry -> entry.getKey()).collect(Collectors.toList());
-		for (UUID id : ids) {
-			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
+		for (final UUID id : ids) {
+			final DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 			res.put(id, df.getHash());
 		}
 		return res;
@@ -112,8 +111,8 @@ public class ModExtractor {
 		boolean doUpdateJar = false;
 
 		Map<UUID, OperationType> diff;
-		ModPack latestPack = seq.getLatestPack().get();
-		ModPack firstPack = seq.getFirstPack().get();
+		final ModPack latestPack = seq.getLatestPack().get();
+		final ModPack firstPack = seq.getFirstPack().get();
 
 		if (currentPack.isPresent()) {
 			diff = seq.getDifference(currentPack.get(), latestPack).getDifference();
@@ -123,12 +122,12 @@ public class ModExtractor {
 			diff = new MPVec(latestPack).getDifference();
 		}
 
-		Map<UUID, String> diffDeletes = extract(diff, OperationType.DELETE);
-		Map<UUID, String> diffAdds = extract(diff, OperationType.ADD);
-		diffAdds.putAll(extract(diff, OperationType.IDENTITY));;
+		final Map<UUID, String> diffDeletes = ModExtractor.extract(diff, OperationType.DELETE);
+		final Map<UUID, String> diffAdds = ModExtractor.extract(diff, OperationType.ADD);
+		diffAdds.putAll(ModExtractor.extract(diff, OperationType.IDENTITY));
 
 		for (final UUID id : diffDeletes.keySet()) {
-			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
+			final DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 
 			if (df.getType() == DataType.CONFIG) {
 				continue;
@@ -140,7 +139,7 @@ public class ModExtractor {
 		}
 
 		for (final UUID id : diffAdds.keySet()) {
-			DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
+			final DistributeFile df = MeiServerLib.instance().getDistributeFile(id);
 
 			File dir = baseDir;
 			if (df.getType() != DataType.JAR) {
@@ -154,33 +153,33 @@ public class ModExtractor {
 		}
 
 		// Merge jar-mods into minecraft.jar
-		List<File> jarMods = new ArrayList<>();
-		Set<String> wroteFiles = new HashSet<>();
+		final List<File> jarMods = new ArrayList<>();
+		final Set<String> wroteFiles = new HashSet<>();
 
 		final File tempDir = new File(baseDir, "temp");
 		latestPack.getMods().stream().sorted((a, b) -> a.getPriority() - b.getPriority()).forEach(mod -> {
-			for (DistributeFile file : mod.getFiles()) {
+			for (final DistributeFile file : mod.getFiles()) {
 				if (file.getType() == DataType.JAR) {
 					jarMods.add(new File(tempDir, file.getName()));
 				}
 			}
 		});
 
-		File binDir = new File(baseDir, "bin");
-		File lockFile = new File(binDir, "minecraft_lock.txt");
+		final File binDir = new File(baseDir, "bin");
+		final File lockFile = new File(binDir, "minecraft_lock.txt");
 		jarMods.add(new File(binDir, "minecraft_vanilla.jar"));
 		doUpdateJar |= !lockFile.exists();
 
 		if (doUpdateJar) {
-			FileOutputStream fos = new FileOutputStream(new File(new File(baseDir, "bin"), "minecraft.jar"));
-			ZipOutputStream dest = new ZipOutputStream(fos);
-			for (File file : jarMods) {
+			final FileOutputStream fos = new FileOutputStream(new File(new File(baseDir, "bin"), "minecraft.jar"));
+			final ZipOutputStream dest = new ZipOutputStream(fos);
+			for (final File file : jarMods) {
 				MeiLogger.getLogger().info(String.format("Merging %s...", file.getName()));
 
-				ZipFile zf = new ZipFile(file);
-				Enumeration<? extends ZipEntry> entries = zf.entries();
+				final ZipFile zf = new ZipFile(file);
+				final Enumeration<? extends ZipEntry> entries = zf.entries();
 				while (entries.hasMoreElements()) {
-					ZipEntry entry = entries.nextElement();
+					final ZipEntry entry = entries.nextElement();
 					if (entry.getName().startsWith("META-INF")) {
 						continue;
 					}

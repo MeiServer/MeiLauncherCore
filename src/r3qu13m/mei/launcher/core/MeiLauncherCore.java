@@ -1,6 +1,7 @@
 package r3qu13m.mei.launcher.core;
 
 import java.io.File;
+
 import javax.swing.filechooser.FileSystemView;
 
 public class MeiLauncherCore {
