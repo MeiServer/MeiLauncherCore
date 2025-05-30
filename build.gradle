@@ -22,7 +22,7 @@ def version = "0.1.0";
 
 sourceSets.main {
     java {
-        srcDir files("src/r3qu13m")
+        srcDir files("src")
     }
 }
 
